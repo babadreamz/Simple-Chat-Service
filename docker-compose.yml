@@ -1,0 +1,35 @@
+services:
+  app:
+    build: .
+    container_name: chat_app
+    ports:
+      - "${EXTERNAL_APP_PORT}:${APP_PORT}"
+    depends_on:
+      - mongo
+    environment:
+      - APP_PORT=2020
+      - MONGO_HOST=chats_mongo
+      - MONGO_EXTERNAL_PORT=27017
+      - MONGO_DB_ROOT_USERNAME=${MONGO_DB_ROOT_USERNAME}
+      - MONGO_DB_ROOT_PASSWORD=${MONGO_DB_ROOT_PASSWORD}
+  mongo:
+    image: mongo:latest
+    container_name: chats_mongo
+    restart: always
+    ports:
+      - "${MONGO_EXTERNAL_PORT}:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_DB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DB_ROOT_PASSWORD}
+    volumes:
+      - chats_mongo_data:/data/db
+
+  redis:
+    image: redis:alpine
+    container_name: chats_redis
+    restart: always
+    ports:
+      - "${REDIS_EXTERNAL_PORT}:6379"
+
+volumes:
+  chats_mongo_data:
