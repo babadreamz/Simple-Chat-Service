@@ -3,39 +3,18 @@ package database
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/babadreamz/Simple-Chat-Service/internal/dtos"
 	"github.com/babadreamz/Simple-Chat-Service/internal/models"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func SaveMessage(incoming models.IncomingMessage) (*models.Message, error) {
-	isActive, err := IsConversationActive(incoming.ConversationID)
-	if err != nil {
-		return nil, fmt.Errorf("failed to check conversation status: %v", err)
-	}
-	if !isActive {
-		return nil, fmt.Errorf("conversation is not active or does not exist")
-	}
+func SaveMessage(message *models.Message) error {
 	collection := GetCollection("messages")
-	newMessage := models.Message{
-		SenderID:       incoming.SenderID,
-		Content:        incoming.Content,
-		ConversationID: incoming.ConversationID,
-		CreatedAt:      time.Now(),
-	}
-	resul, err := collection.InsertOne(context.TODO(), newMessage)
-	if err != nil {
-		return nil, err
-	}
-	if id, ok := resul.InsertedID.(primitive.ObjectID); ok {
-		newMessage.ID = id.Hex()
-	}
-	return &newMessage, nil
+	_, err := collection.InsertOne(context.TODO(), message)
+	return err
 }
 func CreateConversation(conversationId, responderId, reporterId string) (*dtos.ConversationDTO, error) {
 	collection := GetCollection("conversations")

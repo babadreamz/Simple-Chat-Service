@@ -1,6 +1,12 @@
 package websocket
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"log"
+
+	"github.com/babadreamz/Simple-Chat-Service/internal/database"
+	"github.com/babadreamz/Simple-Chat-Service/internal/models"
+)
 
 type TrafficHub struct {
 	//Clients    map[*Client]bool
@@ -8,6 +14,7 @@ type TrafficHub struct {
 	Broadcast  chan []byte
 	Register   chan *Client
 	UnRegister chan *Client
+	Save       chan *models.Message
 }
 
 func NewTrafficHub() *TrafficHub {
@@ -16,6 +23,7 @@ func NewTrafficHub() *TrafficHub {
 		Register:   make(chan *Client),
 		UnRegister: make(chan *Client),
 		Rooms:      make(map[string]map[*Client]bool),
+		Save:       make(chan *models.Message),
 	}
 }
 func (hub *TrafficHub) Run() {
@@ -55,6 +63,14 @@ func (hub *TrafficHub) Run() {
 					}
 				}
 			}
+		}
+	}
+}
+func (hub *TrafficHub) dbWorker() {
+	for msg := range hub.Save {
+		err := database.SaveMessage(msg)
+		if err != nil {
+			log.Printf("Failed to save message asynchronously: %v", err)
 		}
 	}
 }

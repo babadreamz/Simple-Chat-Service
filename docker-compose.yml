@@ -24,12 +24,5 @@ services:
     volumes:
       - chats_mongo_data:/data/db
 
-  redis:
-    image: redis:alpine
-    container_name: chats_redis
-    restart: always
-    ports:
-      - "${REDIS_EXTERNAL_PORT}:6379"
-
 volumes:
   chats_mongo_data:

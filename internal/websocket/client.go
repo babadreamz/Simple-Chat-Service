@@ -9,6 +9,7 @@ import (
 	"github.com/babadreamz/Simple-Chat-Service/internal/database"
 	"github.com/babadreamz/Simple-Chat-Service/internal/models"
 	"github.com/gorilla/websocket"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 const (
@@ -55,13 +56,31 @@ func (c *Client) ReadPump() {
 			log.Printf("error parsing JSON: %v", err)
 			continue
 		}
-		savedMessage, err := database.SaveMessage(incomingMsg)
-		if err != nil {
-			log.Printf("error saving message to DB: %v", err)
+		active, err := database.IsConversationActive(incomingMsg.ConversationID)
+		if err != nil || !active {
+			log.Printf("Conversation %s is not active", incomingMsg.ConversationID)
+			payload := map[string]string{
+				"type":    "error",
+				"content": "Conversation is closed or does not exist.",
+			}
+			errorBytes, _ := json.Marshal(payload)
+			select {
+			case c.Send <- errorBytes:
+			default:
+				log.Println("Could not send error message to client")
+			}
 			continue
 		}
-		broadcastBytes, _ := json.Marshal(savedMessage)
+		fullMessage := &models.Message{
+			ID:             primitive.NewObjectID().Hex(),
+			ConversationID: incomingMsg.ConversationID,
+			SenderID:       incomingMsg.SenderID,
+			Content:        incomingMsg.Content,
+			CreatedAt:      time.Now(),
+		}
+		broadcastBytes, _ := json.Marshal(fullMessage)
 		c.Hub.Broadcast <- broadcastBytes
+		c.Hub.Save <- fullMessage
 	}
 }
 func (c *Client) WritePump() {
