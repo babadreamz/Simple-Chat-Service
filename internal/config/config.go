@@ -37,7 +37,7 @@ func Load() *Config {
 	if appPort == "" {
 		appPort = getEnv("APP_PORT", "2020")
 	}
-
+	log.Println("DEBUG: Mongo URI is:", uri)
 	return &Config{
 		AppPort:   appPort,
 		MongoURI:  uri,
