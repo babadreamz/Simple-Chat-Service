@@ -12,12 +12,7 @@ import (
 
 func main() {
 	configs := config.Load()
-	database.Connect(
-		configs.MongoHost,
-		configs.MongoPort,
-		configs.MongoUser,
-		configs.MongoPass,
-	)
+	database.Connect(configs.MongoURI)
 
 	hub := websocket.NewTrafficHub()
 	go hub.Run()
